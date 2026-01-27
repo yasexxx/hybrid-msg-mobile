@@ -1,8 +1,10 @@
+import * as SecureStore from 'expo-secure-store';
 import * as SMS from 'expo-sms';
 import { useCallback, useEffect, useState } from 'react';
-import { getPendingSms, markSmsAsSent } from '../services/api';
+import { AUTH_KEYS } from '../constants/api-constants';
+import { getPendingSms, markSmsAsSent, sendHeartbeat } from '../services/api';
 
-export const useSmsForwarder = (isActive: boolean, intervalSeconds: number = 10) => {
+export const useSmsForwarder = (isActive: boolean, deviceId?: string, deviceName?: string, intervalSeconds: number = 3) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [lastSync, setLastSync] = useState<Date | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -10,10 +12,26 @@ export const useSmsForwarder = (isActive: boolean, intervalSeconds: number = 10)
     const checkAndSendSms = useCallback(async () => {
         if (!isActive || isProcessing) return;
 
+        // Check for token to handle logout
+        const token = await SecureStore.getItemAsync(AUTH_KEYS.TOKEN);
+        if (!token) {
+            console.log('No auth token found, stopping forwarding');
+            return;
+        }
+
         setIsProcessing(true);
         setError(null);
 
         try {
+            // Send Heartbeat to backend to maintain "ONLINE" status
+            if (deviceId) {
+                try {
+                    await sendHeartbeat(deviceId, deviceName);
+                } catch (hErr) {
+                    console.error('Heartbeat failed:', hErr);
+                }
+            }
+
             const response = await getPendingSms();
             const pendingMessages = response.data;
 
@@ -51,10 +69,10 @@ export const useSmsForwarder = (isActive: boolean, intervalSeconds: number = 10)
         } finally {
             setIsProcessing(false);
         }
-    }, [isActive, isProcessing]);
+    }, [isActive, isProcessing, deviceId, deviceName]);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: any;
 
         if (isActive) {
             // Initial check

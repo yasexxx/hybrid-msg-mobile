@@ -28,6 +28,11 @@ const MAPPING = {
   'exclamationmark.triangle.fill': 'warning',
   'chevron.left': 'chevron-left',
   'person.circle.fill': 'account-circle',
+  'square.grid.2x2.fill': 'grid-view',
+  'envelope': 'mail-outline',
+  'lock': 'lock-outline',
+  'eye': 'visibility',
+  'eye.slash': 'visibility-off',
 } as IconMapping;
 
 /**

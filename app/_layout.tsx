@@ -43,7 +43,10 @@ function AppContent() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          <Stack.Screen name="login" />
+          <>
+            <Stack.Screen name="login" />
+            <Stack.Screen name="two-factor" />
+          </>
         ) : (
           <Stack.Screen name="(tabs)" />
         )}

@@ -1,15 +1,15 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     Alert,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
+import { ThemedTextInput } from '../ui/text-input';
 
 interface PhoneVerificationSectionProps {
     phoneNumber: string;
@@ -31,6 +31,12 @@ export const PhoneVerificationSection: React.FC<PhoneVerificationSectionProps> =
     const [otpMode, setOtpMode] = useState(false);
     const [otpCode, setOtpCode] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (phoneNumber) {
+            setPhone(phoneNumber);
+        }
+    }, [phoneNumber]);
 
     const handleSendOtp = async () => {
         if (!phone || phone.length < 10) {
@@ -76,12 +82,11 @@ export const PhoneVerificationSection: React.FC<PhoneVerificationSectionProps> =
 
             {!otpMode ? (
                 <View style={styles.inputRow}>
-                    <TextInput
-                        style={[styles.input, { color: activeColors.text, borderColor: activeColors.secondary }]}
+                    <ThemedTextInput
+                        containerStyle={{ flex: 1 }}
                         value={phone}
                         onChangeText={setPhone}
                         placeholder="+1 234 567 890"
-                        placeholderTextColor={activeColors.icon}
                         keyboardType="phone-pad"
                         editable={!isVerified}
                     />
@@ -100,8 +105,8 @@ export const PhoneVerificationSection: React.FC<PhoneVerificationSectionProps> =
                     <Text style={[styles.otpLabel, { color: activeColors.icon }]}>
                         {t('otp_sent_to', { phone })}
                     </Text>
-                    <TextInput
-                        style={[styles.otpInput, { color: activeColors.text, borderColor: activeColors.primary }]}
+                    <ThemedTextInput
+                        style={{ textAlign: 'center', fontSize: 24, letterSpacing: 10 }}
                         value={otpCode}
                         onChangeText={setOtpCode}
                         placeholder="000000"

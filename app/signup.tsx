@@ -8,22 +8,22 @@ import * as SecureStore from 'expo-secure-store';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { login, setAuthToken } from '../services/api';
-import '../services/i18n';
+import { register, setAuthToken } from '../services/api';
 
-export default function LoginScreen() {
+export default function SignupScreen() {
     const router = useRouter();
     const { t } = useTranslation();
     const colorScheme = useColorScheme() ?? 'light';
     const activeColors = Colors[colorScheme];
 
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = async () => {
-        if (!email || !password) {
+    const handleSignup = async () => {
+        if (!name || !email || !password) {
             setError(t('fill_fields_error'));
             return;
         }
@@ -32,32 +32,17 @@ export default function LoginScreen() {
         setError(null);
 
         try {
-            const data = await login(email, password);
+            const data = await register(name, email, password);
             
-            // Set temporary token for 2FA verification if required
+            await SecureStore.setItemAsync(AUTH_KEYS.TOKEN, data.token);
             setAuthToken(data.token);
-
-            if (data.two_factor_required) {
-                router.push({
-                    pathname: '/two-factor',
-                    params: { token: data.token }
-                });
-                return;
-            }
-
-            await saveTokenAndNavigate(data.token);
+            router.replace('/(tabs)');
         } catch (err: any) {
             console.error(err);
-            setError(err.response?.data?.message || t('login_failed'));
+            setError(err.response?.data?.message || t('registration_failed'));
         } finally {
             setLoading(false);
         }
-    };
-
-    const saveTokenAndNavigate = async (token: string) => {
-        await SecureStore.setItemAsync(AUTH_KEYS.TOKEN, token);
-        setAuthToken(token);
-        router.replace('/(tabs)');
     };
 
     return (
@@ -66,12 +51,19 @@ export default function LoginScreen() {
             style={[styles.container, { backgroundColor: activeColors.background }]}
         >
             <View style={styles.content}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                >
+                    <IconSymbol name="chevron.left" size={24} color={activeColors.primary} />
+                </TouchableOpacity>
+
                 <View style={[styles.logoContainer, { backgroundColor: activeColors.secondary }]}>
                     <IconSymbol name="paperplane.fill" size={40} color={activeColors.primary} />
                 </View>
 
                 <Text style={[styles.title, { color: activeColors.text }]}>
-                    {t('welcome_back')}
+                    {t('create_account')}
                 </Text>
                 <Text style={[styles.subtitle, { color: activeColors.icon }]}>
                     {t('sign_in_to_continue')}
@@ -80,6 +72,14 @@ export default function LoginScreen() {
                 {error && <Text style={styles.errorText}>{error}</Text>}
 
                 <View style={styles.inputGroup}>
+                    <ThemedTextInput
+                        icon="person"
+                        placeholder={t('full_name')}
+                        value={name}
+                        onChangeText={setName}
+                        autoCapitalize="words"
+                    />
+
                     <ThemedTextInput
                         icon="envelope"
                         placeholder={t('email_address')}
@@ -100,31 +100,20 @@ export default function LoginScreen() {
 
                 <TouchableOpacity
                     style={[styles.button, { backgroundColor: activeColors.primary }]}
-                    onPress={handleLogin}
+                    onPress={handleSignup}
                     disabled={loading}
                 >
-                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>{t('sign_in')}</Text>}
+                    {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>{t('sign_up')}</Text>}
                 </TouchableOpacity>
 
-                <View style={styles.footer}>
-                    <TouchableOpacity 
-                        style={styles.forgotButton}
-                        onPress={() => router.push('/forgot-password')}
-                    >
-                        <Text style={[styles.forgotText, { color: activeColors.primary }]}>
-                            {t('forgot_password')}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                        style={styles.signUpButton}
-                        onPress={() => router.push('/signup')}
-                    >
-                        <Text style={[styles.signUpText, { color: activeColors.icon }]}>
-                            {t('dont_have_account')} <Text style={{ color: activeColors.primary, fontWeight: 'bold' }}>{t('sign_up')}</Text>
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity 
+                    style={styles.signInButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={[styles.signInText, { color: activeColors.icon }]}>
+                        Already have an account? <Text style={{ color: activeColors.primary, fontWeight: 'bold' }}>{t('sign_in')}</Text>
+                    </Text>
+                </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
     );
@@ -138,6 +127,12 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 30,
         justifyContent: 'center',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 60,
+        left: 20,
+        zIndex: 1,
     },
     logoContainer: {
         width: 80,
@@ -160,27 +155,6 @@ const styles = StyleSheet.create({
     inputGroup: {
         marginBottom: 20,
     },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 15,
-        paddingHorizontal: 15,
-        marginBottom: 15,
-        height: 55,
-        borderWidth: 1.5,
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-    },
-    inputIcon: {
-        marginRight: 12,
-    },
-    input: {
-        flex: 1,
-        fontSize: 16,
-    },
     button: {
         height: 55,
         borderRadius: 15,
@@ -198,21 +172,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
     },
-    footer: {
+    signInButton: {
         marginTop: 20,
-        gap: 15,
-    },
-    forgotButton: {
         alignItems: 'center',
     },
-    forgotText: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    signUpButton: {
-        alignItems: 'center',
-    },
-    signUpText: {
+    signInText: {
         fontSize: 14,
     },
     errorText: {

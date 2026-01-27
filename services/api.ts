@@ -19,8 +19,18 @@ export const setAuthToken = (token: string | null) => {
     }
 };
 
-export const login = async (email: string, password: string) => {
-    const response = await api.post(ENDPOINTS.LOGIN, { email, password });
+export const login = async (email: string, password: string, code?: string) => {
+    const response = await api.post(ENDPOINTS.LOGIN, { email, password, code });
+    return response.data;
+};
+
+export const register = async (name: string, email: string, password: string) => {
+    const response = await api.post(ENDPOINTS.REGISTER, { name, email, password });
+    return response.data;
+};
+
+export const verify2faLogin = async (code: string) => {
+    const response = await api.post(ENDPOINTS.VERIFY_2FA_LOGIN, { code });
     return response.data;
 };
 
@@ -86,6 +96,21 @@ export const disable2fa = async () => {
 
 export const logout_api = async () => {
     const response = await api.post(ENDPOINTS.LOGOUT);
+    return response.data;
+};
+
+export const sendHeartbeat = async (device_id: string, name?: string) => {
+    const response = await api.post(ENDPOINTS.HEARTBEAT, { device_id, name });
+    return response.data;
+};
+
+export const requestPasswordReset = async (email: string) => {
+    const response = await api.post(ENDPOINTS.PASSWORD_EMAIL, { email });
+    return response.data;
+};
+
+export const resetPassword = async (data: any) => {
+    const response = await api.post(ENDPOINTS.PASSWORD_RESET, data);
     return response.data;
 };
 

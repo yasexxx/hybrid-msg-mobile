@@ -5,6 +5,8 @@ export const API_CONFIG = {
 
 export const ENDPOINTS = {
     LOGIN: '/login',
+    REGISTER: '/register',
+    VERIFY_2FA_LOGIN: '/login/verify-2fa',
     PENDING_SMS: '/sms/pending',
     UPDATE_STATUS: (id: number) => `/sms/update-status/${id}`,
     SMS_STATS: '/sms/stats',
@@ -18,6 +20,9 @@ export const ENDPOINTS = {
     CONFIRM_2FA: '/profile/2fa/confirm',
     DISABLE_2FA: '/profile/2fa/disable',
     LOGOUT: '/logout',
+    HEARTBEAT: '/device/heartbeat',
+    PASSWORD_EMAIL: '/password/email',
+    PASSWORD_RESET: '/password/reset',
 };
 
 export const AUTH_KEYS = {
