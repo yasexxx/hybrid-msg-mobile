@@ -8,13 +8,13 @@ import { SettingsProvider, useSettings } from '@/constants/SettingsContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import '../services/i18n';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { setAuthToken } from '../services/api';
+
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
 
 function AppContent() {
   const { theme } = useSettings();
@@ -50,7 +50,7 @@ function AppContent() {
         ) : (
           <Stack.Screen name="(tabs)" />
         )}
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
+        {/* <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} /> */}
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
