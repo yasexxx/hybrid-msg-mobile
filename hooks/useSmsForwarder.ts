@@ -3,6 +3,7 @@ import * as SMS from 'expo-sms';
 import { useCallback, useEffect, useState } from 'react';
 import { AUTH_KEYS } from '../constants/api-constants';
 import { getPendingSms, markSmsAsSent, sendHeartbeat } from '../services/api';
+import { getEcho } from '../services/EchoService';
 
 export const useSmsForwarder = (isActive: boolean, deviceId?: string, deviceName?: string, intervalSeconds: number = 3) => {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -23,14 +24,7 @@ export const useSmsForwarder = (isActive: boolean, deviceId?: string, deviceName
         setError(null);
 
         try {
-            // Send Heartbeat to backend to maintain "ONLINE" status
-            if (deviceId) {
-                try {
-                    await sendHeartbeat(deviceId, deviceName);
-                } catch (hErr) {
-                    console.error('Heartbeat failed:', hErr);
-                }
-            }
+            // Heartbeat moved to Echo connection
 
             const response = await getPendingSms();
             const pendingMessages = response.data;
@@ -69,24 +63,55 @@ export const useSmsForwarder = (isActive: boolean, deviceId?: string, deviceName
         } finally {
             setIsProcessing(false);
         }
-    }, [isActive, isProcessing, deviceId, deviceName]);
+    }, [isActive, isProcessing]);
 
     useEffect(() => {
-        let interval: any;
+        let isSubscribed = true;
 
-        if (isActive) {
+        const setupWebSocket = async () => {
+            if (!isActive || !deviceId) return;
+
+            const echo = await getEcho();
+            if (!echo || !isSubscribed) return;
+
+            console.log('Setting up WebSocket for device:', deviceId);
+
+            // Join presence channel - acts as real-time heartbeat
+            echo.join(`devices.${deviceId}`)
+                .here((users: any) => {
+                    console.log('Presence: Already in channel', users);
+                    // Update status immediately on connection
+                    sendHeartbeat(deviceId, deviceName).catch(console.error);
+                })
+                .joining((user: any) => console.log('Presence: User joined', user))
+                .leaving((user: any) => console.log('Presence: User left', user))
+                .error((error: any) => console.error('Presence error:', error));
+
+            // Listen for new SMS notifications
+            echo.private(`devices.${deviceId}`)
+                .listen('.sms.queued', () => {
+                    console.log('WS: New SMS queued, checking...');
+                    checkAndSendSms();
+                });
+
             // Initial check
             checkAndSendSms();
+        };
 
-            interval = setInterval(() => {
-                checkAndSendSms();
-            }, intervalSeconds * 1000);
-        }
+        setupWebSocket();
 
         return () => {
-            if (interval) clearInterval(interval);
+            isSubscribed = false;
+            if (deviceId) {
+                getEcho().then(echo => {
+                    if (echo) {
+                        echo.leave(`devices.${deviceId}`);
+                        echo.leave(`presence-devices.${deviceId}`);
+                    }
+                });
+            }
         };
-    }, [isActive, intervalSeconds, checkAndSendSms]);
+    }, [isActive, deviceId, deviceName, checkAndSendSms]);
 
     return { isProcessing, lastSync, error, forceCheck: checkAndSendSms };
 };

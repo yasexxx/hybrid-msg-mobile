@@ -25,6 +25,8 @@
     "service_status": "Service Status",
     "active_running": "Active & Running",
     "inactive": "Inactive",
+    "online": "Online",
+    "offline": "Offline",
     "last_sync": "Last Sync",
     "never": "Never",
     "forwarding_toggle": "Forwarding Toggle",

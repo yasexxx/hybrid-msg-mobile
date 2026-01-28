@@ -1,6 +1,10 @@
 export const API_CONFIG = {
     BASE_URL: 'http://localhost:8000/api', // Update to your machine IP for real device testing
     TIMEOUT: 10000,
+    REVERB_APP_KEY: 'irnttpignnufnqy04gfz',
+    REVERB_HOST: 'localhost',
+    REVERB_PORT: 8080,
+    REVERB_SCHEME: 'http',
 };
 
 export const ENDPOINTS = {
